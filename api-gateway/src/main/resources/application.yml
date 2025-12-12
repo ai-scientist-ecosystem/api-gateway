@@ -1,0 +1,172 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: api-gateway
+  
+  # Spring Cloud Gateway Configuration
+  cloud:
+    gateway:
+      # Enable service discovery routing
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      
+      # Custom route definitions
+      routes:
+        # Data Collector Routes
+        - id: data-collector-service
+          uri: lb://data-collector
+          predicates:
+            - Path=/api/data-collector/**
+          filters:
+            - RewritePath=/api/data-collector/(?<segment>.*), /${segment}
+            - name: CircuitBreaker
+              args:
+                name: dataCollectorCircuitBreaker
+                fallbackUri: forward:/fallback/data-collector
+        
+        # Alert Engine Routes
+        - id: alert-engine-service
+          uri: lb://alert-engine
+          predicates:
+            - Path=/api/alerts/**
+          filters:
+            - RewritePath=/api/alerts/(?<segment>.*), /api/v1/alerts/${segment}
+            - name: CircuitBreaker
+              args:
+                name: alertEngineCircuitBreaker
+                fallbackUri: forward:/fallback/alerts
+        
+        # Earthquake Controller Routes
+        - id: data-collector-earthquakes
+          uri: lb://data-collector
+          predicates:
+            - Path=/api/earthquakes/**
+          filters:
+            - RewritePath=/api/earthquakes/(?<segment>.*), /api/earthquakes/${segment}
+        
+        # Water Level Controller Routes
+        - id: data-collector-water-levels
+          uri: lb://data-collector
+          predicates:
+            - Path=/api/water-levels/**
+          filters:
+            - RewritePath=/api/water-levels/(?<segment>.*), /api/water-levels/${segment}
+        
+        # Eureka Dashboard Access
+        - id: eureka-server
+          uri: lb://eureka-server
+          predicates:
+            - Path=/eureka/**
+          filters:
+            - RewritePath=/eureka/(?<segment>.*), /${segment}
+      
+      # Global CORS Configuration
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: 
+              - "http://localhost:3000"
+              - "http://localhost:3001"
+              - "http://localhost:8080"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowed-headers: "*"
+            allow-credentials: true
+            max-age: 3600
+      
+      # Default filters for all routes
+      default-filters:
+        - name: Retry
+          args:
+            retries: 3
+            statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+            methods: GET
+            backoff:
+              firstBackoff: 50ms
+              maxBackoff: 500ms
+              factor: 2
+        - AddRequestHeader=X-Gateway-Request, API-Gateway
+        - AddResponseHeader=X-Gateway-Response, API-Gateway
+  
+  # Redis Configuration (for rate limiting)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://admin:admin@localhost:8761/eureka/}
+    registry-fetch-interval-seconds: 5
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+    hostname: ${HOSTNAME:localhost}
+    metadata-map:
+      version: 1.0.0
+      profile: ${spring.profiles.active:default}
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+    gateway:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+
+# Resilience4j Circuit Breaker Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        record-exceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.io.IOException
+    instances:
+      dataCollectorCircuitBreaker:
+        base-config: default
+      alertEngineCircuitBreaker:
+        base-config: default
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.aiscientist.api_gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
