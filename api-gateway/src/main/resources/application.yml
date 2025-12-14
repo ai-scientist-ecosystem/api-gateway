@@ -28,7 +28,19 @@ spring:
                 name: dataCollectorCircuitBreaker
                 fallbackUri: forward:/fallback/data-collector
         
-        # Alert Engine Routes
+        # Alert Engine Routes - Base path (no segment)
+        - id: alert-engine-list
+          uri: lb://alert-engine
+          predicates:
+            - Path=/api/alerts
+          filters:
+            - SetPath=/api/v1/alerts
+            - name: CircuitBreaker
+              args:
+                name: alertEngineCircuitBreaker
+                fallbackUri: forward:/fallback/alerts
+        
+        # Alert Engine Routes - With segment
         - id: alert-engine-service
           uri: lb://alert-engine
           predicates:
