@@ -46,7 +46,7 @@ spring:
           predicates:
             - Path=/api/earthquakes/**
           filters:
-            - RewritePath=/api/earthquakes/(?<segment>.*), /api/earthquakes/${segment}
+            - RewritePath=/api/earthquakes/(?<segment>.*), /api/v1/earthquake/${segment}
         
         # Water Level Controller Routes
         - id: data-collector-water-levels
@@ -54,7 +54,7 @@ spring:
           predicates:
             - Path=/api/water-levels/**
           filters:
-            - RewritePath=/api/water-levels/(?<segment>.*), /api/water-levels/${segment}
+            - RewritePath=/api/water-levels/(?<segment>.*), /api/v1/water-level/${segment}
         
         # Eureka Dashboard Access
         - id: eureka-server
