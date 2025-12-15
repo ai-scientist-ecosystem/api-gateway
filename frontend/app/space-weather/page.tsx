@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import useSWR from 'swr';
-import { Zap, Sun, Shield, Activity } from 'lucide-react';
+import { Zap, Sun, Shield, Activity, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import DataSourceBadge from '@/components/DataSourceBadge';
+import TimestampBreakdown from '@/components/TimestampBreakdown';
 
 interface SpaceWeatherEvent {
   id: string;
@@ -17,14 +19,19 @@ interface SpaceWeatherEvent {
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function SpaceWeatherPage() {
-  const { data: kpEvents, error: kpError, isLoading: kpLoading } = useSWR<SpaceWeatherEvent[]>(
-    'http://localhost:8082/api/v1/collector/kp-index/latest',
+  const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
+  
+  const { data: rawData, error: kpError, isLoading: kpLoading } = useSWR(
+    'http://localhost:8085/api/data-collector/api/v1/collector/kp-index/latest',
     fetcher,
     {
       refreshInterval: 60000, // Refresh every minute
       fallbackData: [],
     }
   );
+
+  // Ensure kpEvents is always an array
+  const kpEvents: SpaceWeatherEvent[] = Array.isArray(rawData) ? rawData : [];
 
   const getKpLevel = (kp: number) => {
     if (kp >= 9) return { label: 'EXTREME', color: 'text-red-500 bg-red-500/10 border-red-500', impact: 'Severe space weather storm' };
@@ -51,9 +58,14 @@ export default function SpaceWeatherPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold mb-2">⚡ Space Weather Monitoring</h1>
-        <p className="text-gray-400">
+        <p className="text-gray-400 mb-3">
           Real-time geomagnetic activity from NOAA Space Weather Prediction Center
         </p>
+        <DataSourceBadge 
+          source="noaa" 
+          timestamp={kpEvents?.[0]?.timestamp}
+          verifyUrl="https://www.swpc.noaa.gov/products/planetary-k-index"
+        />
       </div>
 
       {/* Current Conditions Alert */}
@@ -187,9 +199,11 @@ export default function SpaceWeatherPage() {
           {kpEvents?.slice(0, 20).map((event, index) => {
             const kp = event.kpIndex || event.estimatedKp || 0;
             const level = getKpLevel(kp);
+            const eventKey = `${event.id}-${index}`;
+            const isExpanded = expandedEvent === eventKey;
 
             return (
-              <div key={`${event.id}-${index}`} className="p-6 hover:bg-gray-800/50 transition-colors">
+              <div key={eventKey} className="p-6 hover:bg-gray-800/50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className={`px-4 py-2 rounded-lg border font-bold ${level.color}`}>
@@ -200,13 +214,37 @@ export default function SpaceWeatherPage() {
                       <p className="text-xs text-gray-400">{level.impact}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-300">{event.timeTag}</p>
-                    <p className="text-xs text-gray-400">
-                      {formatDistanceToNow(new Date(event.timestamp), { addSuffix: true })}
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-sm text-gray-300">{event.timeTag}</p>
+                      <p className="text-xs text-gray-400">
+                        {formatDistanceToNow(new Date(event.timestamp), { addSuffix: true })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setExpandedEvent(isExpanded ? null : eventKey)}
+                      className="text-gray-400 hover:text-gray-300 transition-colors"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="w-5 h-5" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" />
+                      )}
+                    </button>
                   </div>
                 </div>
+
+                {/* Expandable Timeline */}
+                {isExpanded && (
+                  <div className="mt-4 pt-4 border-t border-gray-700">
+                    <TimestampBreakdown
+                      measured={event.timestamp}
+                      ingested={event.timestamp}
+                      processed={event.timestamp}
+                      displayed={new Date().toISOString()}
+                    />
+                  </div>
+                )}
               </div>
             );
           })}

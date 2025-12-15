@@ -4,6 +4,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import { Activity, MapPin, Clock, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import DataSourceBadge from '@/components/DataSourceBadge';
 
 interface Earthquake {
   earthquakeId: string;
@@ -60,9 +61,14 @@ export default function EarthquakesPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold mb-2">🌍 Earthquake Monitoring</h1>
-        <p className="text-gray-400">
+        <p className="text-gray-400 mb-3">
           Real-time earthquake data from USGS
         </p>
+        <DataSourceBadge 
+          source="usgs" 
+          timestamp={earthquakes?.[0]?.timestamp}
+          verifyUrl="https://earthquake.usgs.gov/earthquakes/map/"
+        />
       </div>
 
       {/* Stats Grid */}

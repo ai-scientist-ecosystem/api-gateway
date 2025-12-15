@@ -4,6 +4,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import { Waves, MapPin, Clock, AlertTriangle, Droplets } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import DataSourceBadge from '@/components/DataSourceBadge';
 
 interface WaterLevelData {
   id: number;
@@ -99,9 +100,21 @@ export default function WaterLevelsPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold mb-2">🌊 Water Level Monitoring</h1>
-        <p className="text-gray-400">
+        <p className="text-gray-400 mb-3">
           Real-time water levels from NOAA (oceans) and USGS (rivers)
         </p>
+        <div className="flex flex-wrap gap-3">
+          <DataSourceBadge 
+            source="noaa" 
+            timestamp={stats?.timestamp}
+            verifyUrl="https://tidesandcurrents.noaa.gov/"
+          />
+          <DataSourceBadge 
+            source="usgs" 
+            timestamp={stats?.timestamp}
+            verifyUrl="https://waterdata.usgs.gov/nwis/rt"
+          />
+        </div>
       </div>
 
       {/* Stats Grid */}

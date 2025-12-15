@@ -1,7 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { Alert } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import DataSourceBadge from './DataSourceBadge';
+import TimestampBreakdown from './TimestampBreakdown';
 
 interface AlertCardProps {
   alert: Alert;
@@ -17,6 +21,7 @@ const severityColors = {
 };
 
 export default function AlertCard({ alert }: AlertCardProps) {
+  const [showTimeline, setShowTimeline] = useState(false);
   const colorClass = severityColors[alert.severity] || severityColors.MODERATE;
   
   return (
@@ -36,7 +41,7 @@ export default function AlertCard({ alert }: AlertCardProps) {
             {alert.description}
           </p>
           
-          <div className="flex items-center gap-4 text-xs text-gray-400">
+          <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
             {alert.location && (
               <span>📍 {alert.location}</span>
             )}
@@ -50,6 +55,44 @@ export default function AlertCard({ alert }: AlertCardProps) {
               {formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}
             </span>
           </div>
+          
+          {/* Data Source Badge */}
+          <div className="flex items-center justify-between gap-2">
+            <DataSourceBadge 
+              source={
+                alert.alertType === 'GEOMAGNETIC_STORM' ? 'noaa' :
+                alert.alertType === 'EARTHQUAKE' || alert.alertType === 'TSUNAMI_WARNING' ? 'usgs' :
+                alert.alertType === 'FLOOD_WARNING' ? 'usgs' :
+                'noaa'
+              }
+              timestamp={alert.timestamp}
+            />
+            
+            {/* Toggle Timeline Button */}
+            <button
+              onClick={() => setShowTimeline(!showTimeline)}
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-300 transition-colors"
+            >
+              <span>Timeline</span>
+              {showTimeline ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              )}
+            </button>
+          </div>
+
+          {/* Expandable Timeline */}
+          {showTimeline && (
+            <div className="mt-3 pt-3 border-t border-gray-700/50">
+              <TimestampBreakdown
+                measured={alert.timestamp}
+                ingested={alert.createdAt}
+                processed={alert.processedAt || alert.createdAt}
+                displayed={new Date().toISOString()}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
