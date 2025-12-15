@@ -31,9 +31,8 @@ export default function WaterLevelMap({ stations, floodingStations, className = 
     zoom: 3.5,
   });
 
-  // Free Mapbox token (limited usage - replace with your own for production)
-  const MAPBOX_TOKEN = 'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjbGV4YW1wbGUifQ.example' || 
-    'pk.eyJ1IjoidGVzdCIsImEiOiJjbGV4YW1wbGUifQ.example';
+  // Mapbox access token (free tier: 50k requests/month)
+  const MAPBOX_TOKEN = 'pk.eyJ1IjoiaG9hbmd0aGFpMjI5IiwiYSI6ImNtajdhZ2U0NjAyNXMzY29pM21td21lYmIifQ.3-bICsmXggEDPoHdg9zo4w';
 
   const getSeverityColor = (severity?: string) => {
     if (!severity) return '#3B82F6'; // blue
