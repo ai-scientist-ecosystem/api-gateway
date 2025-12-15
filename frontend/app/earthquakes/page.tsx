@@ -23,7 +23,7 @@ export default function EarthquakesPage() {
   const [timeRange, setTimeRange] = useState(24);
 
   const { data: earthquakes, error, isLoading } = useSWR<Earthquake[]>(
-    `http://localhost:8085/api/earthquakes/recent?hours=${timeRange}`,
+    `http://localhost:8085/api/data-collector/api/v1/earthquake/recent?hours=${timeRange}`,
     fetcher,
     {
       refreshInterval: 60000, // Refresh every minute
@@ -175,15 +175,21 @@ export default function EarthquakesPage() {
 
                   {/* Details */}
                   <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
-                    <span>📍 {quake.latitude.toFixed(2)}°, {quake.longitude.toFixed(2)}°</span>
-                    <span>⬇️ Depth: {quake.depth.toFixed(1)} km</span>
-                    {quake.tsunamiRiskScore && (
+                    {quake.latitude != null && quake.longitude != null && (
+                      <span>📍 {quake.latitude.toFixed(2)}°, {quake.longitude.toFixed(2)}°</span>
+                    )}
+                    {quake.depth != null && (
+                      <span>⬇️ Depth: {quake.depth.toFixed(1)} km</span>
+                    )}
+                    {quake.tsunamiRiskScore != null && (
                       <span>🌊 Risk: {quake.tsunamiRiskScore.toFixed(0)}%</span>
                     )}
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatDistanceToNow(new Date(quake.timestamp), { addSuffix: true })}
-                    </span>
+                    {quake.timestamp && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {formatDistanceToNow(new Date(quake.timestamp), { addSuffix: true })}
+                      </span>
+                    )}
                   </div>
                 </div>
 

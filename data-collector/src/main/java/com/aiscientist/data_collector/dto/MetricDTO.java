@@ -26,6 +26,7 @@ public class MetricDTO {
     private String metricType;
     
     private Double kpIndex;
+    private Double estimatedKp;
     private String cmeClass;
     private Integer speedKmh;
     private String rawData;

@@ -75,6 +75,30 @@ public class DataCollectorController {
         return ResponseEntity.ok(metrics);
     }
 
+    @GetMapping("/kp-index/latest")
+    public ResponseEntity<List<MetricDTO>> getLatestKpIndex(
+            @RequestParam(defaultValue = "24") int hours) {
+        
+        log.info("Fetching Kp-index data for last {} hours", hours);
+        Instant since = Instant.now().minus(hours, ChronoUnit.HOURS);
+        
+        List<MetricDTO> metrics = metricRepository.findRecentMetrics("noaa", since)
+                .stream()
+                .filter(metric -> "kp_index".equals(metric.getMetricType()))
+                .map(metric -> MetricDTO.builder()
+                        .id(metric.getId())
+                        .timestamp(metric.getTimestamp())
+                        .source(metric.getSource())
+                        .metricType(metric.getMetricType())
+                        .kpIndex(metric.getKpIndex())
+                        .processedAt(metric.getProcessedAt())
+                        .build())
+                .collect(Collectors.toList());
+        
+        log.info("Retrieved {} Kp-index records", metrics.size());
+        return ResponseEntity.ok(metrics);
+    }
+
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Data Collector is running");
