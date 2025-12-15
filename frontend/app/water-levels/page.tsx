@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import { Waves, MapPin, Clock, AlertTriangle, Droplets } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import DataSourceBadge from '@/components/DataSourceBadge';
+import WaterLevelMap from '@/components/WaterLevelMap';
 
 interface WaterLevelData {
   id: number;
@@ -39,12 +40,22 @@ const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function WaterLevelsPage() {
   const [locationType, setLocationType] = useState<'all' | 'ocean' | 'river'>('all');
+  const [view, setView] = useState<'list' | 'map'>('list');
 
   const { data: floodingStations, error: floodError } = useSWR<FloodingStation[]>(
     'http://localhost:8085/api/data-collector/api/v1/water-level/flooding',
     fetcher,
     {
       refreshInterval: 60000,
+      fallbackData: [],
+    }
+  );
+
+  const { data: allStations } = useSWR<WaterLevelData[]>(
+    'http://localhost:8085/api/data-collector/api/v1/water-level/stations',
+    fetcher,
+    {
+      refreshInterval: 120000,
       fallbackData: [],
     }
   );
@@ -152,41 +163,79 @@ export default function WaterLevelsPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4">
-        <button
-          onClick={() => setLocationType('all')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
-            locationType === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-          }`}
-        >
-          All Stations
-        </button>
-        <button
-          onClick={() => setLocationType('ocean')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
-            locationType === 'ocean'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-          }`}
-        >
-          🌊 Ocean/Coast
-        </button>
-        <button
-          onClick={() => setLocationType('river')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
-            locationType === 'river'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-          }`}
-        >
-          🏞️ Rivers/Streams
-        </button>
+      {/* Filters & View Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-4">
+          <button
+            onClick={() => setLocationType('all')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              locationType === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            All Stations
+          </button>
+          <button
+            onClick={() => setLocationType('ocean')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              locationType === 'ocean'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            🌊 Ocean/Coast
+          </button>
+          <button
+            onClick={() => setLocationType('river')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              locationType === 'river'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            🏞️ Rivers/Streams
+          </button>
+        </div>
+
+        {/* View Toggle */}
+        <div className="flex items-center gap-2 bg-gray-800 rounded-lg p-1">
+          <button
+            onClick={() => setView('list')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              view === 'list'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            📋 List
+          </button>
+          <button
+            onClick={() => setView('map')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              view === 'map'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            🗺️ Map
+          </button>
+        </div>
       </div>
 
+      {/* Map View */}
+      {view === 'map' && allStations && (
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
+          <WaterLevelMap 
+            stations={allStations}
+            floodingStations={floodingStations || []}
+            className="h-[600px]"
+          />
+        </div>
+      )}
+
       {/* Flooding Stations List */}
+      {view === 'list' && (
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg overflow-hidden">
         <div className="p-6 border-b border-gray-800">
           <h2 className="text-xl font-bold">
@@ -272,6 +321,7 @@ export default function WaterLevelsPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Info Box */}
       <div className="bg-blue-500/10 border border-blue-500/50 rounded-lg p-6">

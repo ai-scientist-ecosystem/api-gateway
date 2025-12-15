@@ -15,12 +15,27 @@ export default function DashboardPage() {
     fallbackData: [],
   });
 
+  const { data: waterStats } = useSWR(
+    'http://localhost:8085/api/data-collector/api/v1/water-level/stats',
+    fetcher,
+    {
+      refreshInterval: 60000, // Refresh every 60 seconds
+      fallbackData: { noaaStations: 0, usgsStations: 0, activeStations: 0, currentlyFlooding: 0 },
+    }
+  );
+
   const [stats, setStats] = useState<DashboardStats>({
     totalAlerts: 0,
     criticalAlerts: 0,
     earthquakes: 0,
     averageKp: 0,
   });
+
+  const waterLevelStats = {
+    totalStations: (waterStats?.noaaStations || 0) + (waterStats?.usgsStations || 0),
+    activeStations: waterStats?.activeStations || 0,
+    flooding: waterStats?.currentlyFlooding || 0,
+  };
 
   useEffect(() => {
     if (alerts && alerts.length > 0) {
@@ -49,7 +64,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatsCard
           title="Total Alerts"
           value={stats.totalAlerts}
@@ -74,6 +89,15 @@ export default function DashboardPage() {
           icon="⚡"
           color="green"
         />
+        <a href="/water-levels" className="block transition-transform hover:scale-105">
+          <StatsCard
+            title="Water Levels"
+            value={waterLevelStats.flooding > 0 ? waterLevelStats.flooding : waterLevelStats.activeStations}
+            icon="🌊"
+            color={waterLevelStats.flooding > 0 ? "red" : "cyan"}
+            subtitle={waterLevelStats.flooding > 0 ? `${waterLevelStats.flooding} flooding` : `${waterLevelStats.totalStations} stations`}
+          />
+        </a>
       </div>
 
       {/* Main Content Grid */}

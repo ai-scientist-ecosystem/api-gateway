@@ -171,6 +171,18 @@ public class WaterLevelController {
     }
 
     /**
+     * Get all unique stations with their latest data
+     */
+    @GetMapping("/stations")
+    public ResponseEntity<List<WaterLevelMetric>> getAllStations() {
+        log.info("Fetching all water level monitoring stations");
+        
+        List<WaterLevelMetric> latestByStation = waterLevelRepository.findLatestByStation();
+        
+        return ResponseEntity.ok(latestByStation);
+    }
+
+    /**
      * Get statistics about water level monitoring
      */
     @GetMapping("/stats")

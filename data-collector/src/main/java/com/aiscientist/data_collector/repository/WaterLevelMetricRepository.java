@@ -65,4 +65,12 @@ public interface WaterLevelMetricRepository extends JpaRepository<WaterLevelMetr
         @Param("maxLat") double maxLat,
         @Param("minLon") double minLon, 
         @Param("maxLon") double maxLon);
+
+    /**
+     * Get latest measurement for each unique station
+     */
+    @Query("SELECT w FROM WaterLevelMetric w WHERE " +
+           "w.id IN (SELECT MAX(w2.id) FROM WaterLevelMetric w2 GROUP BY w2.stationId) " +
+           "ORDER BY w.stationName")
+    List<WaterLevelMetric> findLatestByStation();
 }
