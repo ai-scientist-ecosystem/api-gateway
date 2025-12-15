@@ -22,6 +22,7 @@ export default function RootLayout({
                 <a href="/" className="hover:text-white transition-colors">Dashboard</a>
                 <a href="/alerts" className="hover:text-white transition-colors">Alerts</a>
                 <a href="/earthquakes" className="hover:text-white transition-colors">Earthquakes</a>
+                <a href="/water-levels" className="hover:text-white transition-colors">Water Levels</a>
                 <a href="/space-weather" className="hover:text-white transition-colors">Space Weather</a>
               </div>
             </div>
